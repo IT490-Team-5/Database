@@ -8,12 +8,23 @@ mydb = mysql.connector.connect(
   password="ubuntu",
   database= "testdb"
 )
-
-mycursor = mydb.cursor()
-
-mycursor.execute("SELECT * FROM test")
-
-results=mycursor.fetchall()
+def callback(ch, method, properties, body):
+    info = json.loads(body)
+    mycursor = mydb.cursor()
+    mycursor.execute(info)
+    result= mycursor.fetchall()
+    
+    d={}
+    for i in results:
+    	a = i[0]
+    	b = i[1]
+    	d[a] = b
+    	
+    print(d)
+    r=json.dumps(d)
+    channel.basic_publish(exchange='', routing_key='right' , body=r)
+    print("[x] Sent 'Hello World!'")
+    
 
 credentials = pika.PlainCredentials('admin', 'admin')
 connection = pika.BlockingConnection(
@@ -21,13 +32,6 @@ connection = pika.BlockingConnection(
     
 channel = connection.channel()
 
-channel.queue_declare(queue='hello')
-d={}
-for i in results:
-    a = i[0]
-    b = i[1]
-    d[a] = b 
-r=json.dumps(d)
-channel.basic_publish(exchange='', routing_key='hello', body=r)
-print(" [x] Sent 'Hello World!'")
-connection.close()
+channel.queue_declare(queue='right')
+channel.basic_consume('right', callback, auto_ack=True)
+channel.start_consuming()
