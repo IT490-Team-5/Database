@@ -14,15 +14,18 @@ def callback(ch, method, properties, body):
     mycursor.execute(info)
     result= mycursor.fetchall()
     
-    d={}
+    d1={}
     for i in results:
-    	a = i[0]
-    	b = i[1]
-    	d[a] = b
-    	
-    print(d)
-    r=json.dumps(d)
-    channel.basic_publish(exchange='', routing_key='right' , body=r)
+        a = i[0]
+        b = i[1]
+        d[a] = b
+    
+    d2={}
+    d2["query"] = d1
+    d2["reason"] = "results"
+
+    r=json.dumps(d2)
+    channel.basic_publish(exchange='', routing_key='hello' , body=r)
     print("[x] Sent 'Hello World!'")
     
 
@@ -32,6 +35,7 @@ connection = pika.BlockingConnection(
     
 channel = connection.channel()
 
-channel.queue_declare(queue='right')
-channel.basic_consume('right', callback, auto_ack=True)
+channel.queue_declare(queue='database')
+channel.basic_consume('database', callback, auto_ack=True)
+print("Listening on queue: Database")
 channel.start_consuming()
